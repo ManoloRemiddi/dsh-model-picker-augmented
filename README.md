@@ -16,11 +16,23 @@ models appear in the list and which ones are pinned to the top.
   no matches disappear; an empty query restores the full list.
 - **Show / hide models** — hide models you never use from the picker list via
   the settings page. Hidden models stay listed in Settings (marked *Hidden*)
-  so you can bring them back without a full reset.
+  so you can bring them back whenever you want.
 - **Pin to top** — pin your favorite models; they render in a *Pinned* section
   at the very top of the model list (and are removed from their provider group
   below to avoid duplicates). Order them with the up/down arrows in Settings.
-- **Reset to defaults** — one button restores every model and clears all pins.
+- **Refresh providers** — this button first forces
+  the running harness to re-read `~/.dsh/settings.yaml` from disk, so
+  providers and models you added to the file **appear without restarting the
+  harness** — a new provider block in the file is served by the time the
+  refresh finishes. It then re-reads the live catalog and, for every active
+  provider that has a `baseURL`, checks the provider's endpoint and appends
+  any models the file does not list yet to the provider's `models` list in
+  `settings.yaml` — a provider that has a `baseURL` but no `models` list yet
+  fills itself in with a single click, no hand-editing. If the file sync
+  itself fails, the refresh continues and reports it (`settings.yaml sync
+  failed: …`). The page also follows harness
+  catalog changes pushed by the host (settings commits, adapter
+  re-registrations, credential updates), so the view stays live.
 - Keeps the rest of the picker exactly as shipped: the two-level Model/Effort
   menu, effort levels, keyboard navigation, error/retry states, and full sync
   with the `/model` command (both use the same shared model directory).
@@ -68,7 +80,9 @@ dsh plugin --profile web remove model-picker-augmented
    - **Visible / Hidden** toggles per model (hidden models vanish from the
      picker, stay listed here, and can be re-enabled at any time).
    - **Pin to top** per model, with up/down arrows to order the pinned section.
-   - **Reset to defaults** to clear everything.
+   - **Refresh providers** to sync the running harness with `settings.yaml` (file-added
+     providers and models appear without a restart) and to check provider
+     endpoints for new models; see *How it works* below.
 
 ## How it works
 
@@ -88,6 +102,39 @@ dsh plugin --profile web remove model-picker-augmented
   pinned: … }`), so your pins and hidden models survive page refreshes,
   browser restarts, and machine restarts. On startup the browser half hydrates
   the picker from that stored value.
+- **Refresh providers** (settings page) runs in two stages, only when you click it:
+  1. **Sync the harness with `settings.yaml`.** It issues a no-op write
+     through the settings commit API to the plugin's own
+     `model-picker-augmented` namespace. Every settings write forces the
+     harness to re-read `settings.yaml` from disk before persisting, and any
+     file that has drifted — providers or models added by hand while the
+     harness was running — is re-published through the normal settings
+     pipeline, so their routes are re-registered **live, without a restart**.
+     Only the plugin's curation section is rewritten; every other section of
+     the file passes through untouched (comments included). If this step
+     fails, the refresh continues with the in-memory catalog and reports
+     `settings.yaml sync failed: …`.
+  2. **Re-read the catalog and sync the endpoints.** It then fetches
+     `api.llm.models` (catalog + per-provider failures),
+     `api.llm.providers` (which providers are active and where their
+     settings live), and `settings.describe` (current `llm-pi-ai` profiles
+     + revision). For every active provider with a `baseURL` whose group
+     serves real models it calls `api.llm.discoverModels` against that
+     `baseURL` (stored credentials are used automatically) and appends any
+     models the file does not list yet to the provider's `models` list with
+     a single revision-checked `settings.mutate` write; a provider with a
+     `baseURL` but no `models` list yet gets the reply adopted as its full
+     list. Missing `name`/`contextWindow`/`maxTokens` are filled with the
+     harness defaults. The write goes through the settings commit API (not a
+     raw file edit), so `settings.yaml` stays the source of truth and the
+     running harness picks the new models up immediately; the composer
+     picker follows via the host's `settings/document-updated` /
+     `llm/adapters-updated` events.
+
+  Nothing else is written: stage 1 touches only the
+  `model-picker-augmented` section, stage 2 only appends — existing model
+  entries are never rewritten, and providers without a `baseURL` are
+  skipped.
 
 ## Notes on model availability
 
@@ -99,7 +146,13 @@ provider (e.g. a new GLM or Qwen tier) only appear once added to that list.
 
 ### Adding models a provider announced but your catalog lacks
 
-Either use the shipped **Settings → Models** page (its fetch-from-endpoint
+The fastest path is the **Refresh providers** button on the Model Picker Augmented
+page: add a provider block under `llm-pi-ai.providers` in `settings.yaml`
+(give it a `baseURL` and an API key if the endpoint needs one) and click
+Refresh. Refresh first syncs the running harness with the file — no restart
+needed — then pulls the provider's model list from the endpoint and writes it
+into `settings.yaml` for you. You can
+also use the shipped **Settings → Models** page (its fetch-from-endpoint
 flow pulls the current catalog from the provider), or edit
 `~/.dsh/settings.yaml` directly. Each entry needs `id`, `name`,
 `contextWindow`, and `maxTokens` (positive integers). Because an explicit
@@ -128,10 +181,14 @@ llm-pi-ai:
         # …plus every other zai model you want to keep
 ```
 
-The same applies to `openrouter` (e.g. `qwen/qwen3.8-max`). The harness
-hot-reloads `settings.yaml`, so the picker picks the new entries up on its
-next open. Real specs come from the provider (Z.ai docs, OpenRouter) — or
-let the fetch-from-endpoint flow fill them in.
+The same applies to `openrouter` (e.g. `qwen/qwen3.8-max`). File edits are
+picked up by the running harness on your next **Refresh providers** click: Refresh providers
+first syncs `settings.yaml` into the harness (no restart), then checks the
+endpoints for new models. If a Refresh reports `settings.yaml sync failed:
+…`, the file was not applied — check the YAML (for example, a declared
+provider without a catalog entry needs a `baseURL`) and click Refresh again.
+Real specs come from the provider (Z.ai docs, OpenRouter) — or let the
+fetch-from-endpoint flow fill them in.
 
 ## License
 
