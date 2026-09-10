@@ -1,6 +1,6 @@
 {
   "name": "dsh-model-picker-augmented",
-  "version": "1.1.1",
+  "version": "1.1.2",
   "description": "Searchable, curated composer model picker for DeepSeek Harness: live model search, a Model Picker Augmented settings page to show/hide and pin models, and a Refresh providers button that syncs the running harness with settings.yaml (no restart) and auto-discovers newly declared provider models from their endpoints.",
   "license": "MIT",
   "author": {
@@ -32,7 +32,7 @@
   },
   "dsh": {
     "engines": {
-      "dsh": ">=0.1.1-rc.1"
+      "dsh": ">=0.1.5-rc.1"
     },
     "bundle": {
       "patch": "./cordis.patch.yml"
@@ -40,7 +40,6 @@
     "client": {
       "inject": [
         "@deepseek-ai/dsh-client-locale",
-        "@deepseek-ai/dsh-client-runtime",
         "@deepseek-ai/dsh-client-ui-conversation",
         "@deepseek-ai/dsh-client-ui-settings",
         "@deepseek-ai/dsh-client-ui-model-selection"
@@ -53,5 +52,13 @@
   },
   "dependencies": {
     "schemastery": "^3.18.0"
+  },
+  "devDependencies": {
+    "jsdom": "30.0.1",
+    "react": "^18.3.1",
+    "react-dom": "18.3.1"
+  },
+  "scripts": {
+    "test": "node --test test/*.test.mjs"
   }
 }

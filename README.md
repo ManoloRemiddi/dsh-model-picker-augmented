@@ -39,11 +39,11 @@ models appear in the list and which ones are pinned to the top.
 
 ## Requirements
 
-- DeepSeek Harness (`dsh`) `>= 0.1.1-rc.1`
+- DeepSeek Harness (`dsh`) `>= 0.1.5-rc.1` (verified with 0.1.5-rc.1)
 - The web GUI profile (`--profile web`), which ships the dependencies this
   plugin builds on (`@deepseek-ai/dsh-client-ui-conversation`,
   `@deepseek-ai/dsh-client-ui-settings`, `@deepseek-ai/dsh-client-ui-model-selection`,
-  `@deepseek-ai/dsh-client-locale`, `@deepseek-ai/dsh-client-runtime`).
+  `@deepseek-ai/dsh-client-locale`).
 
 ## Install
 
@@ -92,7 +92,7 @@ dsh plugin --profile web remove model-picker-augmented
 - Model data comes from the harness itself: the picker reads the same
   per-session advisory directory the shipped picker uses (the
   `modelDirectories` service), and the settings page fetches the global
-  catalog through the client wire API (`api.llm.models`). The plugin adds no
+  catalog through the Remote API (`remote.session.modelCatalog`). The plugin adds no
   model data of its own — if a model is missing from the picker, it is missing
   from your configured provider catalogs (see below).
 - Curation (hidden models + pinned order) is **persisted durably on your
@@ -115,11 +115,11 @@ dsh plugin --profile web remove model-picker-augmented
      fails, the refresh continues with the in-memory catalog and reports
      `settings.yaml sync failed: …`.
   2. **Re-read the catalog and sync the endpoints.** It then fetches
-     `api.llm.models` (catalog + per-provider failures),
-     `api.llm.providers` (which providers are active and where their
-     settings live), and `settings.describe` (current `llm-pi-ai` profiles
+     `remote.session.modelCatalog` (catalog + per-provider failures),
+     `remote.llm.listProviders` and `remote.llm.listConfigurableProviders`
+     (active routes and their settings locations), and `remote.settings.describe` (current `llm-pi-ai` profiles
      + revision). For every active provider with a `baseURL` whose group
-     serves real models it calls `api.llm.discoverModels` against that
+     serves real models it calls `remote.llm.discoverModels` against that
      `baseURL` (stored credentials are used automatically) and appends any
      models the file does not list yet to the provider's `models` list with
      a single revision-checked `settings.mutate` write; a provider with a
@@ -196,3 +196,22 @@ MIT — Copyright (c) 2026 Manolo Remiddi. See [LICENSE](LICENSE).
 
 Every source file carries the MIT header; `package.json` states it via the
 `license` and `author` fields.
+
+## DSH 0.1.5 compatibility (1.1.2)
+
+Version 1.1.1 used the removed `connection.api` browser interface and could
+stop the DSH GUI with “Cannot read properties of undefined (reading settings)”.
+Version 1.1.2 declares the scoped `remote.settings`, `remote.llm`, and
+`remote.session` dependencies and uses their current methods, positional
+arguments and Result values. Pins and hidden models retain their existing
+settings namespace and format.
+
+Run `pnpm test` for regression coverage of client initialization, curation
+writes, provider discovery, revision-checked model additions and catalog
+errors. Tests use an in-memory settings service and never access credentials
+or live model endpoints.
+
+Verified on 2026-09-10 with DSH 0.1.5-rc.1 and Chromium 152: the complete
+DSH GUI loads without plugin failures, composer search filters models, the
+settings catalog renders, and a pin survives a page reload. The temporary
+test pin was removed and the original curation settings were verified intact.
