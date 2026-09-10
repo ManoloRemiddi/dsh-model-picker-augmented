@@ -47,11 +47,24 @@ models appear in the list and which ones are pinned to the top.
 
 ## Install
 
+Install the tested **1.1.2** package directly from its GitHub release:
+
+```bash
+dsh plugin --profile web add https://github.com/ManoloRemiddi/dsh-model-picker-augmented/releases/download/v1.1.2/dsh-model-picker-augmented-1.1.2.tgz
+```
+
+Restart DSH and reload its web page. This package is distributed through
+GitHub Releases; it is not published on npm. Existing users with a `link:`
+installation should update their linked checkout to tag `v1.1.2` instead
+of adding a second copy. Keep your current settings and model credentials.
+
+For a source installation:
+
 The plugin is a DSH bundle patch package (same pattern as other hot-pluggable
 web plugins):
 
 ```bash
-git clone https://github.com/ManoloRemiddi/dsh-model-picker-augmented.git
+git clone --branch v1.1.2 --depth 1 https://github.com/ManoloRemiddi/dsh-model-picker-augmented.git
 cd dsh-model-picker-augmented
 pnpm install
 dsh plugin --profile web add link:$(pwd)
@@ -66,7 +79,7 @@ under **Settings → Model Picker Augmented**.
 To remove it:
 
 ```bash
-dsh plugin --profile web remove model-picker-augmented
+dsh plugin --profile web remove dsh-model-picker-augmented
 ```
 
 ## Usage
