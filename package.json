@@ -1,6 +1,6 @@
 {
   "name": "dsh-model-picker-augmented",
-  "version": "1.1.2",
+  "version": "1.1.3",
   "description": "Searchable, curated composer model picker for DeepSeek Harness: live model search, a Model Picker Augmented settings page to show/hide and pin models, and a Refresh providers button that syncs the running harness with settings.yaml (no restart) and auto-discovers newly declared provider models from their endpoints.",
   "license": "MIT",
   "author": {
@@ -51,7 +51,7 @@
     "react": "^18.2.0"
   },
   "dependencies": {
-    "schemastery": "^3.18.0"
+    "@deepseek-ai/schemastery": "3.18.4"
   },
   "devDependencies": {
     "jsdom": "30.0.1",

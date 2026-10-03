@@ -1,5 +1,10 @@
 # dsh-model-picker-augmented
 
+## Version 1.1.3: DSH 0.2 settings compatibility
+
+The host now uses @deepseek-ai/schemastery 3.18.4, exports volatile hidden/pinned Config fields and uses settings.configure on DSH 0.2. The old settings.register path remains supported. Three browser Remote API fixtures pass; the real DSH 0.2 host exposes the durable namespace and retained saved curation after restarting. Provider/model selection is preserved. Local installation and registry publication are separate.
+
+
 > **MIT License** — Copyright (c) 2026 **Manolo Remiddi**
 > SPDX-License-Identifier: MIT — see [LICENSE](LICENSE) for the full license text.
 
